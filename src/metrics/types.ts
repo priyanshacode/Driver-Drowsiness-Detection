@@ -4,6 +4,8 @@ export type CurrentMetrics = {
   ear: { left: number; right: number; average: number } | null
   mar: number | null
   perclos: number | null
+  blinkCount: number
+  blinkRate: number
   headPose: { pitch: number; yaw: number; roll: number } | null
 }
 
@@ -15,6 +17,8 @@ export type RecordingSample = {
   earAverage: number
   mar: number
   perclos: number | null
+  blinkCount: number
+  blinkRate: number
   pitch: number
   yaw: number
   roll: number

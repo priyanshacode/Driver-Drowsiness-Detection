@@ -3,6 +3,7 @@ import { FaceLandmarkerService } from '../mediapipe/faceLandmarkerService'
 import { computeEar } from '../features/ear'
 import { computeMar } from '../features/mar'
 import { computeHeadPose, type MediaPipeMatrix } from '../features/headPose'
+import { BlinkTracker } from '../features/blinks'
 import { PerclosTracker } from '../metrics/perclos'
 import { drawOverlay } from '../visualization/overlay'
 import { RecordingBuffer } from '../recording/recordingBuffer'
@@ -23,6 +24,8 @@ const EMPTY_METRICS: CurrentMetrics = {
   ear: null,
   mar: null,
   perclos: null,
+  blinkCount: 0,
+  blinkRate: 0,
   headPose: null,
 }
 
@@ -45,6 +48,7 @@ export function useDrowsinessPipeline(
 
   const serviceRef = useRef<FaceLandmarkerService | null>(null)
   const perclosRef = useRef(new PerclosTracker())
+  const blinkTrackerRef = useRef(new BlinkTracker())
   const recordingBufferRef = useRef(new RecordingBuffer())
   const rafRef = useRef<number | null>(null)
   const togglesRef = useRef(toggles)
@@ -108,12 +112,18 @@ export function useDrowsinessPipeline(
           perclosRef.current.addSample(now, ear.average)
           const perclos = perclosRef.current.getPerclos(now)
 
+          blinkTrackerRef.current.addSample(now, ear.average)
+          const blinkCount = blinkTrackerRef.current.getTotalBlinks()
+          const blinkRate = blinkTrackerRef.current.getBlinkRate(now)
+
           const nextMetrics: CurrentMetrics = {
             timestamp: now,
             faceDetected: true,
             ear,
             mar,
             perclos,
+            blinkCount,
+            blinkRate,
             headPose,
           }
 
@@ -134,10 +144,15 @@ export function useDrowsinessPipeline(
         } else {
           // No face: do not report stale measurements.
           perclosRef.current.addSample(now, null)
+          blinkTrackerRef.current.addSample(now, null)
+
+          const blinkCount = blinkTrackerRef.current.getTotalBlinks()
+          const blinkRate = blinkTrackerRef.current.getBlinkRate(now)
+
           if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height)
           if (now - lastUiUpdateRef.current > 66) {
             lastUiUpdateRef.current = now
-            setMetrics({ ...EMPTY_METRICS, timestamp: now, faceDetected: false })
+            setMetrics({ ...EMPTY_METRICS, timestamp: now, faceDetected: false, blinkCount, blinkRate })
           }
         }
       }
@@ -153,9 +168,12 @@ export function useDrowsinessPipeline(
     }
   }, [cameraStatus, mediaPipeStatus, videoRef, canvasRef])
 
-  // Reset PERCLOS history if the camera restarts.
+  // Reset PERCLOS and blink history if the camera restarts.
   useEffect(() => {
-    if (cameraStatus === 'active') perclosRef.current.reset()
+    if (cameraStatus === 'active') {
+      perclosRef.current.reset()
+      blinkTrackerRef.current.reset()
+    }
   }, [cameraStatus])
 
   function startRecording() {

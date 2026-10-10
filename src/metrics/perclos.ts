@@ -3,15 +3,16 @@ import { EAR_CLOSED_THRESHOLD, PERCLOS_WARMUP_MS, PERCLOS_WINDOW_MS } from '../c
 type Sample = {
   /** ms timestamp */
   t: number
+  valid: boolean
   closed: boolean
 }
 
 /**
  * Time-based PERCLOS tracker using a rolling window.
  *
- * PERCLOS = closed-eye duration / total observed duration * 100
+ * PERCLOS = closed-eye duration / total valid observed duration * 100
  *
- * Implemented by accumulating (timestamp, closed) samples and, on each
+ * Implemented by accumulating (timestamp, valid, closed) samples and, on each
  * query, summing the *duration* between consecutive samples that fall
  * within the trailing window - not by counting frames. This keeps the
  * result correct even if the processing frame rate fluctuates.
@@ -24,8 +25,9 @@ export class PerclosTracker {
   addSample(timestampMs: number, ear: number | null): void {
     if (this.startTime === null) this.startTime = timestampMs
 
-    const closed = ear !== null && ear < EAR_CLOSED_THRESHOLD
-    this.samples.push({ t: timestampMs, closed })
+    const valid = ear !== null
+    const closed = valid && ear < EAR_CLOSED_THRESHOLD
+    this.samples.push({ t: timestampMs, valid, closed })
 
     const cutoff = timestampMs - PERCLOS_WINDOW_MS
     // Keep one sample before the cutoff so the earliest interval in the
@@ -40,7 +42,7 @@ export class PerclosTracker {
     if (firstKeep > 0) this.samples = this.samples.slice(firstKeep)
   }
 
-  /** Returns the PERCLOS percentage (0-100), or null while still warming up. */
+  /** Returns the PERCLOS percentage (0-100), or null while still warming up or if valid observation is 0. */
   getPerclos(now: number): number | null {
     if (this.startTime === null) return null
     if (now - this.startTime < PERCLOS_WARMUP_MS) return null
@@ -60,10 +62,13 @@ export class PerclosTracker {
       const segDuration = curr.t - segStart
       if (segDuration <= 0) continue
 
-      observedMs += segDuration
       // The eye state during a segment is attributed from the sample at
-      // the end of that segment (closest available observation).
-      if (curr.closed) closedMs += segDuration
+      // the start of that segment. This represents forward zero-order hold.
+      // We only consider the segment valid if BOTH boundaries are valid.
+      if (curr.valid && prev.valid) {
+        observedMs += segDuration
+        if (prev.closed) closedMs += segDuration
+      }
     }
 
     if (observedMs <= 0) return null

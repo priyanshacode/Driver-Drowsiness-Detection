@@ -74,6 +74,14 @@ export function MetricsPanel({ metrics }: { metrics: CurrentMetrics }) {
           barColor="#a855f7"
         />
         <ValueRow
+          label="Blink Rate (1m window)"
+          value={`${fmt(metrics.blinkRate, 1)} / min`}
+        />
+        <ValueRow
+          label="Total Blinks"
+          value={`${metrics.blinkCount}`}
+        />
+        <ValueRow
           label="PERCLOS (30s window)"
           value={metrics.perclos === null ? '—' : `${metrics.perclos.toFixed(1)}%`}
           barPct={metrics.perclos ?? 0}

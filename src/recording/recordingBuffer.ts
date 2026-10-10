@@ -39,6 +39,8 @@ export class RecordingBuffer {
       earAverage: metrics.ear.average,
       mar: metrics.mar,
       perclos: metrics.perclos,
+      blinkCount: metrics.blinkCount,
+      blinkRate: metrics.blinkRate,
       pitch: metrics.headPose.pitch,
       yaw: metrics.headPose.yaw,
       roll: metrics.headPose.roll,

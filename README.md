@@ -25,8 +25,9 @@ npm run preview   # preview the production build locally
 ## What it does
 
 - Live webcam feed with real-time MediaPipe Face Landmarker detection (runs on-device, WASM/GPU).
-- Calculates, every frame: left/right/average **EAR**, **MAR**, **PERCLOS** (30s rolling
-  window, fixed EAR < 0.20 threshold), and **head pose** (pitch/yaw/roll).
+- Calculates, every frame: left/right/average **EAR**, **MAR**, and **head pose** (pitch/yaw/roll).
+- Tracks **Blink Count** and **Blink Rate** (rolling 1-minute window, >= 100ms closure filter).
+- Tracks **PERCLOS** (30s rolling window, fixed EAR < 0.20 threshold). Missing faces are safely excluded from the calculation.
 - Draws toggleable overlays (eyes / mouth / head-pose axis / full face mesh) — toggles only
   affect drawing, not calculation.
 - Simple in-memory recording buffer (~10 Hz samples), discarded on reload — no persistence.

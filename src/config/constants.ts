@@ -9,6 +9,15 @@
 /** EAR value below which an eye is considered "closed" for PERCLOS purposes. */
 export const EAR_CLOSED_THRESHOLD = 0.2
 
+/** Minimum duration (ms) for an eye closure to be counted as a valid blink. */
+export const BLINK_MIN_DURATION_MS = 100
+
+/** Maximum duration (ms) for an eye closure to be counted as a valid blink. */
+export const BLINK_MAX_DURATION_MS = 500
+
+/** Rolling observation window for blink rate calculation (ms). */
+export const BLINK_RATE_WINDOW_MS = 60_000
+
 /** PERCLOS rolling observation window, in milliseconds. */
 export const PERCLOS_WINDOW_MS = 30_000
 
