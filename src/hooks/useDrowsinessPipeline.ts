@@ -3,6 +3,7 @@ import { FaceLandmarkerService } from '../mediapipe/faceLandmarkerService'
 import { computeEar } from '../features/ear'
 import { computeMar } from '../features/mar'
 import { computeHeadPose, type MediaPipeMatrix } from '../features/headPose'
+import { DrowsinessEvaluator } from '../features/drowsinessRules'
 import { PerclosTracker } from '../metrics/perclos'
 import { drawOverlay } from '../visualization/overlay'
 import { RecordingBuffer } from '../recording/recordingBuffer'
@@ -24,11 +25,12 @@ const EMPTY_METRICS: CurrentMetrics = {
   mar: null,
   perclos: null,
   headPose: null,
+  alert: { level: 'tracking-lost', reason: 'Waiting for face detection' },
 }
 
 /**
- * Wires camera -> MediaPipe -> feature extraction -> PERCLOS -> a single
- * CurrentMetrics object, and fans that out to the UI, the canvas overlay,
+ * Wires camera -> MediaPipe -> feature extraction -> PERCLOS -> drowsiness evaluation
+ * -> a single CurrentMetrics object, and fans that out to the UI, the canvas overlay,
  * and the (optional, in-memory) recording buffer. This is the one place
  * that owns the real-time processing loop.
  */
@@ -45,6 +47,7 @@ export function useDrowsinessPipeline(
 
   const serviceRef = useRef<FaceLandmarkerService | null>(null)
   const perclosRef = useRef(new PerclosTracker())
+  const evaluatorRef = useRef(new DrowsinessEvaluator())
   const recordingBufferRef = useRef(new RecordingBuffer())
   const rafRef = useRef<number | null>(null)
   const togglesRef = useRef(toggles)
@@ -108,6 +111,14 @@ export function useDrowsinessPipeline(
           perclosRef.current.addSample(now, ear.average)
           const perclos = perclosRef.current.getPerclos(now)
 
+          const alert = evaluatorRef.current.evaluate(now, {
+            faceDetected: true,
+            ear,
+            mar,
+            perclos,
+            headPose,
+          })
+
           const nextMetrics: CurrentMetrics = {
             timestamp: now,
             faceDetected: true,
@@ -115,6 +126,7 @@ export function useDrowsinessPipeline(
             mar,
             perclos,
             headPose,
+            alert,
           }
 
           if (ctx && canvas) {
@@ -134,10 +146,18 @@ export function useDrowsinessPipeline(
         } else {
           // No face: do not report stale measurements.
           perclosRef.current.addSample(now, null)
+          const alert = evaluatorRef.current.evaluate(now, {
+            faceDetected: false,
+            ear: null,
+            mar: null,
+            perclos: null,
+            headPose: null,
+          })
+
           if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height)
           if (now - lastUiUpdateRef.current > 66) {
             lastUiUpdateRef.current = now
-            setMetrics({ ...EMPTY_METRICS, timestamp: now, faceDetected: false })
+            setMetrics({ ...EMPTY_METRICS, timestamp: now, faceDetected: false, alert })
           }
         }
       }
@@ -153,9 +173,12 @@ export function useDrowsinessPipeline(
     }
   }, [cameraStatus, mediaPipeStatus, videoRef, canvasRef])
 
-  // Reset PERCLOS history if the camera restarts.
+  // Reset PERCLOS and evaluator history if the camera restarts.
   useEffect(() => {
-    if (cameraStatus === 'active') perclosRef.current.reset()
+    if (cameraStatus === 'active') {
+      perclosRef.current.reset()
+      evaluatorRef.current.reset()
+    }
   }, [cameraStatus])
 
   function startRecording() {
@@ -181,6 +204,7 @@ export function useDrowsinessPipeline(
     mediaPipeStatus,
     mediaPipeError,
     metrics,
+    alert: metrics.alert ?? EMPTY_METRICS.alert!,
     recording,
     startRecording,
     stopRecording,

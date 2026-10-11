@@ -1,3 +1,10 @@
+export type AlertLevel = 'normal' | 'warning' | 'critical' | 'tracking-lost'
+
+export type DrowsinessAlert = {
+  level: AlertLevel
+  reason: string
+}
+
 export type CurrentMetrics = {
   timestamp: number
   faceDetected: boolean
@@ -5,6 +12,7 @@ export type CurrentMetrics = {
   mar: number | null
   perclos: number | null
   headPose: { pitch: number; yaw: number; roll: number } | null
+  alert?: DrowsinessAlert
 }
 
 export type RecordingSample = {

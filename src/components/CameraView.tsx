@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { CameraStatus } from '../camera/useCamera'
 import type { MediaPipeStatus } from '../hooks/useDrowsinessPipeline'
+import type { DrowsinessAlert } from '../metrics/types'
 
 type Props = {
   videoRef: React.RefObject<HTMLVideoElement | null>
@@ -11,6 +12,7 @@ type Props = {
   mediaPipeStatus: MediaPipeStatus
   mediaPipeError: string | null
   faceDetected: boolean
+  alert?: DrowsinessAlert
 }
 
 export function CameraView({
@@ -22,6 +24,7 @@ export function CameraView({
   mediaPipeStatus,
   mediaPipeError,
   faceDetected,
+  alert,
 }: Props) {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -38,10 +41,17 @@ export function CameraView({
   const showErrorOverlay = cameraStatus === 'denied' || cameraStatus === 'unavailable' || cameraStatus === 'error'
   const showMediaPipeError = mediaPipeStatus === 'error'
 
+  const borderClass =
+    alert?.level === 'critical'
+      ? 'border-2 border-red-500 ring-4 ring-red-500/50'
+      : alert?.level === 'warning'
+        ? 'border-2 border-amber-500 ring-2 ring-amber-500/30'
+        : 'border border-slate-200'
+
   return (
     <div
       ref={containerRef}
-      className="relative aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900"
+      className={`relative aspect-video w-full overflow-hidden rounded-2xl bg-slate-900 transition-all ${borderClass}`}
     >
       <video
         ref={videoRef}
@@ -78,6 +88,20 @@ export function CameraView({
         {cameraStatus === 'active' && mediaPipeStatus === 'loading' && (
           <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
             Loading landmark model...
+          </span>
+        )}
+
+        {/* Real-time Drowsiness Alert Badges */}
+        {alert?.level === 'critical' && (
+          <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-lg animate-pulse backdrop-blur">
+            <span className="h-2 w-2 rounded-full bg-white" />
+            MICROSLEEP ALERT
+          </span>
+        )}
+        {alert?.level === 'warning' && (
+          <span className="flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-slate-900 shadow-md backdrop-blur">
+            <span className="h-2 w-2 rounded-full bg-amber-950" />
+            FATIGUE WARNING
           </span>
         )}
       </div>

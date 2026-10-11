@@ -6,8 +6,17 @@
  * these values without touching calculation logic.
  */
 
-/** EAR value below which an eye is considered "closed" for PERCLOS purposes. */
+/** EAR value below which an eye is considered "closed" for PERCLOS and closure detection. */
 export const EAR_CLOSED_THRESHOLD = 0.2
+
+/** Continuous eye-closure duration (ms) required to trigger a critical microsleep alert. */
+export const PROLONGED_EYE_CLOSURE_MS = 1500
+
+/**
+ * Eye-opening recovery duration (ms) required to clear a critical prolonged-closure alert (hysteresis).
+ * Prevents rapid alert flickering if the driver's eyelids flutter.
+ */
+export const EYE_CLOSURE_RECOVERY_MS = 800
 
 /** PERCLOS rolling observation window, in milliseconds. */
 export const PERCLOS_WINDOW_MS = 30_000
@@ -18,6 +27,21 @@ export const PERCLOS_WINDOW_MS = 30_000
  * startup. Per spec: do not estimate from the first 3-5 seconds.
  */
 export const PERCLOS_WARMUP_MS = 5_000
+
+/**
+ * PERCLOS percentage threshold (0-100) above which an elevated fatigue warning is triggered.
+ * Note: Prototype heuristic setting; not a clinically certified medical threshold.
+ */
+export const PERCLOS_ALERT_THRESHOLD = 15.0
+
+/** MAR threshold above which mouth opening is considered a potential yawn. */
+export const YAWN_MAR_THRESHOLD = 0.5
+
+/** Minimum continuous duration (ms) of elevated MAR required to trigger a yawn secondary warning. */
+export const YAWN_MIN_DURATION_MS = 2000
+
+/** Cooldown duration (ms) between audible alarm bursts to prevent continuous screeching. */
+export const AUDIO_ALERT_COOLDOWN_MS = 4000
 
 /** Target sampling rate for the (in-memory only) recording buffer. */
 export const RECORDING_SAMPLE_RATE_HZ = 10

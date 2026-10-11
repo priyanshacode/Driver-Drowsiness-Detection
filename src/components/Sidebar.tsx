@@ -1,15 +1,34 @@
 import type { ReactElement } from 'react'
 
-export type Page = 'monitor' | 'settings' | 'about'
+export type Page = 'monitor' | 'calibration' | 'analytics' | 'settings' | 'about'
 
 const NAV_ITEMS: { id: Page; label: string; icon: ReactElement }[] = [
   {
     id: 'monitor',
-    label: 'Monitor',
+    label: 'Live Monitoring',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2 4 4 8-8 4 4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 19h18" />
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+        <line x1="8" y1="21" x2="16" y2="21" />
+        <line x1="12" y1="17" x2="12" y2="21" />
+      </svg>
+    ),
+  },
+  {
+    id: 'calibration',
+    label: 'Personalization',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 20V10M18 20V4M6 20v-4" />
+      </svg>
+    ),
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
   },
@@ -23,45 +42,55 @@ const NAV_ITEMS: { id: Page; label: string; icon: ReactElement }[] = [
       </svg>
     ),
   },
-  {
-    id: 'about',
-    label: 'About',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
-        <circle cx="12" cy="12" r="9" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4M12 8h.01" />
-      </svg>
-    ),
-  },
 ]
 
 export function Sidebar({ page, onNavigate }: { page: Page; onNavigate: (p: Page) => void }) {
   return (
-    <aside className="flex w-56 shrink-0 flex-col justify-between border-r border-slate-200 bg-white px-3 py-5">
-      <nav className="flex flex-col gap-1">
-        {NAV_ITEMS.map((item) => {
-          const active = item.id === page
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          )
-        })}
-      </nav>
+    <aside className="flex w-64 shrink-0 flex-col justify-between border-r border-slate-800 bg-slate-900 px-4 py-6 text-slate-300">
+      <div>
+        <div className="mb-8 flex items-center gap-3 px-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white">
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-sm font-bold tracking-wide text-slate-100">DRIVEWATCH</h1>
+            <p className="text-[10px] uppercase tracking-wider text-slate-500">Engineering Console</p>
+          </div>
+        </div>
 
-      <div className="px-3 text-xs text-slate-400">
-        <p className="font-medium text-slate-500">DriveWatch</p>
-        <p>v0.1.0 (prototype)</p>
-        <p className="mt-1">Facial measurement research build</p>
+        <nav className="flex flex-col gap-1.5">
+          {NAV_ITEMS.map((item) => {
+            const active = item.id === page
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-blue-600/10 text-blue-400'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+
+      <div className="px-2 text-xs text-slate-500">
+        <p className="font-semibold text-slate-400">System Status</p>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+          <span>Module 1: Active</span>
+        </div>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+          <span>Module 2: Pending</span>
+        </div>
       </div>
     </aside>
   )

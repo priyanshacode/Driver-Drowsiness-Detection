@@ -22,15 +22,15 @@ function ValueRow({
   barColor?: string
 }) {
   return (
-    <div className="py-2.5">
+    <div className="py-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-sm text-slate-500">{label}</span>
-        <span className="text-lg font-semibold text-slate-900">{value}</span>
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</span>
+        <span className="text-lg font-mono font-semibold text-slate-900">{value}</span>
       </div>
       {barPct !== undefined && (
-        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full rounded-full transition-all"
+            className="h-full rounded-full transition-all duration-75"
             style={{
               width: `${Math.max(0, Math.min(100, barPct ?? 0))}%`,
               backgroundColor: barColor ?? '#3b82f6',
@@ -46,64 +46,94 @@ export function MetricsPanel({ metrics }: { metrics: CurrentMetrics }) {
   const active = metrics.faceDetected
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="mb-1 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5 text-blue-500">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h4l2 7 4-14 2 7h6" />
-          </svg>
-          Live Metrics
-        </h2>
-        <span className={`flex items-center gap-1.5 text-xs font-medium ${active ? 'text-emerald-600' : 'text-slate-400'}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-          {active ? 'Monitoring...' : 'Waiting for face'}
-        </span>
-      </div>
-
-      <div className="divide-y divide-slate-100">
-        <ValueRow
-          label="EAR (Eye Aspect Ratio)"
-          value={fmt(metrics.ear?.average)}
-          barPct={metrics.ear ? (metrics.ear.average / 0.4) * 100 : 0}
-          barColor="#3b82f6"
-        />
-        <ValueRow
-          label="MAR (Mouth Aspect Ratio)"
-          value={fmt(metrics.mar)}
-          barPct={metrics.mar ? (metrics.mar / 1) * 100 : 0}
-          barColor="#a855f7"
-        />
-        <ValueRow
-          label="PERCLOS (30s window)"
-          value={metrics.perclos === null ? '—' : `${metrics.perclos.toFixed(1)}%`}
-          barPct={metrics.perclos ?? 0}
-          barColor="#22c55e"
-        />
-      </div>
-
-      <div className="mt-4 border-t border-slate-100 pt-4">
-        <p className="mb-2 text-sm font-medium text-slate-500">Head Pose</p>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-center">
-            <p className="text-xs text-slate-400">Pitch</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-800">{fmtDeg(metrics.headPose?.pitch)}</p>
-          </div>
-          <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-center">
-            <p className="text-xs text-slate-400">Yaw</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-800">{fmtDeg(metrics.headPose?.yaw)}</p>
-          </div>
-          <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-center">
-            <p className="text-xs text-slate-400">Roll</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-800">{fmtDeg(metrics.headPose?.roll)}</p>
-          </div>
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <h2 className="text-sm font-semibold text-slate-700">Telemetry Stream</h2>
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            {active && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>}
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            {active ? 'Receiving' : 'No Signal'}
+          </span>
         </div>
       </div>
 
-      <div className="mt-4 border-t border-slate-100 pt-4">
-        <p className="mb-2 text-sm font-medium text-slate-500">Current Status</p>
-        <div className="rounded-xl bg-slate-50 px-4 py-3">
-          <p className="text-lg font-semibold text-slate-400">—</p>
+      <div className="flex-1 p-4">
+        <div className="divide-y divide-slate-100">
+          <ValueRow
+            label="EAR"
+            value={fmt(metrics.ear?.average)}
+            barPct={metrics.ear ? (metrics.ear.average / 0.4) * 100 : 0}
+            barColor="#3b82f6"
+          />
+          <ValueRow
+            label="MAR"
+            value={fmt(metrics.mar)}
+            barPct={metrics.mar ? (metrics.mar / 1) * 100 : 0}
+            barColor="#8b5cf6"
+          />
+          <ValueRow
+            label="PERCLOS (30s)"
+            value={metrics.perclos === null ? '—' : `${metrics.perclos.toFixed(1)}%`}
+            barPct={metrics.perclos ?? 0}
+            barColor="#10b981"
+          />
         </div>
+
+        <div className="mt-6">
+          <h3 className="mb-3 text-xs font-medium text-slate-500 uppercase tracking-wide">Head Pose Matrix</h3>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-2 text-center">
+              <p className="text-[10px] uppercase text-slate-400">Pitch</p>
+              <p className="mt-1 font-mono text-sm font-semibold text-slate-800">{fmtDeg(metrics.headPose?.pitch)}</p>
+            </div>
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-2 text-center">
+              <p className="text-[10px] uppercase text-slate-400">Yaw</p>
+              <p className="mt-1 font-mono text-sm font-semibold text-slate-800">{fmtDeg(metrics.headPose?.yaw)}</p>
+            </div>
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-2 text-center">
+              <p className="text-[10px] uppercase text-slate-400">Roll</p>
+              <p className="mt-1 font-mono text-sm font-semibold text-slate-800">{fmtDeg(metrics.headPose?.roll)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-lg bg-slate-900 p-3 shadow-inner">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">System State</span>
+            <span className="text-[10px] font-mono text-slate-500">T+{(metrics.timestamp / 1000).toFixed(1)}s</span>
+          </div>
+          {metrics.alert?.level === 'critical' ? (
+            <div>
+              <div className="font-mono text-xs font-bold uppercase tracking-wider text-red-400 animate-pulse">
+                &gt; ALERT: PROLONGED_CLOSURE
+              </div>
+              <p className="mt-1 text-[11px] text-red-300/80 leading-snug">{metrics.alert.reason}</p>
+            </div>
+          ) : metrics.alert?.level === 'warning' ? (
+            <div>
+              <div className="font-mono text-xs font-bold uppercase tracking-wider text-amber-400">
+                &gt; WARNING: ELEVATED_FATIGUE
+              </div>
+              <p className="mt-1 text-[11px] text-amber-300/80 leading-snug">{metrics.alert.reason}</p>
+            </div>
+          ) : active ? (
+            <div>
+              <div className="font-mono text-xs font-semibold text-emerald-400">&gt; STATUS: DRIVER_ALERT</div>
+              <p className="mt-1 text-[11px] text-slate-400">Normal facial telemetry</p>
+            </div>
+          ) : (
+            <div>
+              <div className="font-mono text-xs text-slate-400">&gt; STATUS: AWAITING_SUBJECT</div>
+              <p className="mt-1 text-[11px] text-slate-500">Reposition within camera view</p>
+            </div>
+          )}
+        </div>
+        <p className="mt-3 text-[10px] text-slate-400 leading-tight">
+          Prototype heuristic rules for engineering evaluation. Not clinically validated.
+        </p>
       </div>
     </div>
   )
