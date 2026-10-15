@@ -21,6 +21,7 @@ export type RecordingState =
 const EMPTY_METRICS: CurrentMetrics = {
   timestamp: 0,
   faceDetected: false,
+  faceBox: null,
   ear: null,
   mar: null,
   perclos: null,
@@ -39,6 +40,12 @@ export function useDrowsinessPipeline(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   cameraStatus: CameraStatus,
   toggles: OverlayToggles,
+  getMobileViTPrediction?: () => {
+    drowsyProbability: number
+    nonDrowsyProbability: number
+    label: 'Drowsy' | 'Non Drowsy' | 'Uncertain'
+    inferenceTimeMs: number
+  } | null,
 ) {
   const [mediaPipeStatus, setMediaPipeStatus] = useState<MediaPipeStatus>('loading')
   const [mediaPipeError, setMediaPipeError] = useState<string | null>(null)
@@ -53,6 +60,11 @@ export function useDrowsinessPipeline(
   const togglesRef = useRef(toggles)
   const recordingPhaseRef = useRef<RecordingState['phase']>('idle')
   const lastUiUpdateRef = useRef(0)
+  const getMobileViTPredictionRef = useRef(getMobileViTPrediction)
+
+  useEffect(() => {
+    getMobileViTPredictionRef.current = getMobileViTPrediction
+  }, [getMobileViTPrediction])
 
   useEffect(() => {
     togglesRef.current = toggles
@@ -105,6 +117,24 @@ export function useDrowsinessPipeline(
           const ear = computeEar(faceLandmarks)
           const mar = computeMar(faceLandmarks)
 
+          let minX = 1
+          let maxX = 0
+          let minY = 1
+          let maxY = 0
+          for (let i = 0; i < faceLandmarks.length; i++) {
+            const p = faceLandmarks[i]
+            if (p.x < minX) minX = p.x
+            if (p.x > maxX) maxX = p.x
+            if (p.y < minY) minY = p.y
+            if (p.y > maxY) maxY = p.y
+          }
+          const faceBox = {
+            x: Math.max(0, minX),
+            y: Math.max(0, minY),
+            width: Math.min(1, Math.max(0, maxX - minX)),
+            height: Math.min(1, Math.max(0, maxY - minY)),
+          }
+
           const matrix = result?.facialTransformationMatrixes?.[0] as MediaPipeMatrix | undefined
           const headPose = matrix ? computeHeadPose(matrix) : null
 
@@ -122,6 +152,7 @@ export function useDrowsinessPipeline(
           const nextMetrics: CurrentMetrics = {
             timestamp: now,
             faceDetected: true,
+            faceBox,
             ear,
             mar,
             perclos,
@@ -134,7 +165,8 @@ export function useDrowsinessPipeline(
           }
 
           if (recordingPhaseRef.current === 'recording') {
-            recordingBufferRef.current.maybeAddSample(nextMetrics)
+            const mvPred = getMobileViTPredictionRef.current?.() ?? null
+            recordingBufferRef.current.maybeAddSample(nextMetrics, mvPred)
           }
 
           // Throttle React state updates to ~15Hz to avoid excessive rerenders
@@ -154,10 +186,22 @@ export function useDrowsinessPipeline(
             headPose: null,
           })
 
+          const missingFaceMetrics: CurrentMetrics = {
+            ...EMPTY_METRICS,
+            timestamp: now,
+            faceDetected: false,
+            alert,
+          }
+
+          if (recordingPhaseRef.current === 'recording') {
+            const mvPred = getMobileViTPredictionRef.current?.() ?? null
+            recordingBufferRef.current.maybeAddSample(missingFaceMetrics, mvPred)
+          }
+
           if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height)
           if (now - lastUiUpdateRef.current > 66) {
             lastUiUpdateRef.current = now
-            setMetrics({ ...EMPTY_METRICS, timestamp: now, faceDetected: false, alert })
+            setMetrics(missingFaceMetrics)
           }
         }
       }

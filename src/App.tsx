@@ -7,11 +7,23 @@ import { AnalyticsPage } from './components/AnalyticsPage'
 import { DEFAULT_OVERLAY_TOGGLES, type OverlayToggles } from './config/constants'
 import type { RecordingSample } from './metrics/types'
 
+export type AlertEvent = {
+  id: string
+  timestamp: number
+  elapsedTimeMs: number
+  level: 'warning' | 'critical'
+  reason: string
+  ear?: number | null
+  perclos?: number | null
+  mar?: number | null
+}
+
 export type SessionRecord = {
   id: string
   date: string
   durationMs: number
   samples: RecordingSample[]
+  alerts: AlertEvent[]
 }
 
 function App() {
@@ -19,12 +31,17 @@ function App() {
   const [toggles, setToggles] = useState<OverlayToggles>(DEFAULT_OVERLAY_TOGGLES)
   const [sessions, setSessions] = useState<SessionRecord[]>([])
 
-  const handleSaveSession = (durationMs: number, samples: RecordingSample[]) => {
+  const handleSaveSession = (
+    durationMs: number,
+    samples: RecordingSample[],
+    alerts: AlertEvent[] = [],
+  ) => {
     const newSession: SessionRecord = {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
       durationMs,
       samples,
+      alerts,
     }
     setSessions(prev => [newSession, ...prev])
   }

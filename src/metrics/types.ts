@@ -5,9 +5,17 @@ export type DrowsinessAlert = {
   reason: string
 }
 
+export type BoundingBox = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export type CurrentMetrics = {
   timestamp: number
   faceDetected: boolean
+  faceBox?: BoundingBox | null
   ear: { left: number; right: number; average: number } | null
   mar: number | null
   perclos: number | null
@@ -18,12 +26,19 @@ export type CurrentMetrics = {
 export type RecordingSample = {
   timestamp: number
   elapsedTime: number
-  earLeft: number
-  earRight: number
-  earAverage: number
-  mar: number
+  faceDetected: boolean
+  earLeft: number | null
+  earRight: number | null
+  earAverage: number | null
+  mar: number | null
   perclos: number | null
-  pitch: number
-  yaw: number
-  roll: number
+  pitch: number | null
+  yaw: number | null
+  roll: number | null
+  alertLevel?: AlertLevel
+  alertReason?: string
+  mobileViTScore?: number | null // Drowsy probability 0-100%
+  mobileViTNonDrowsy?: number | null // Non-Drowsy probability 0-100%
+  mobileViTLabel?: 'Drowsy' | 'Non Drowsy' | 'Uncertain' | null
+  mobileViTLatencyMs?: number | null
 }

@@ -18,10 +18,17 @@ export class RecordingBuffer {
     this.lastSampleAt = null
   }
 
-  /** Called on every processed frame; only records at ~10 Hz. */
-  maybeAddSample(metrics: CurrentMetrics): void {
+  /** Called on every processed frame; records at ~10 Hz including tracking loss and ML telemetry. */
+  maybeAddSample(
+    metrics: CurrentMetrics,
+    mobileViT?: {
+      drowsyProbability: number
+      nonDrowsyProbability: number
+      label: 'Drowsy' | 'Non Drowsy' | 'Uncertain'
+      inferenceTimeMs: number
+    } | null,
+  ): void {
     if (this.startedAt === null) return
-    if (!metrics.faceDetected || !metrics.ear || metrics.mar === null || !metrics.headPose) return
 
     if (
       this.lastSampleAt !== null &&
@@ -34,14 +41,21 @@ export class RecordingBuffer {
     this.samples.push({
       timestamp: metrics.timestamp,
       elapsedTime: metrics.timestamp - this.startedAt,
-      earLeft: metrics.ear.left,
-      earRight: metrics.ear.right,
-      earAverage: metrics.ear.average,
-      mar: metrics.mar,
-      perclos: metrics.perclos,
-      pitch: metrics.headPose.pitch,
-      yaw: metrics.headPose.yaw,
-      roll: metrics.headPose.roll,
+      faceDetected: metrics.faceDetected,
+      earLeft: metrics.ear?.left ?? null,
+      earRight: metrics.ear?.right ?? null,
+      earAverage: metrics.ear?.average ?? null,
+      mar: metrics.mar ?? null,
+      perclos: metrics.perclos ?? null,
+      pitch: metrics.headPose?.pitch ?? null,
+      yaw: metrics.headPose?.yaw ?? null,
+      roll: metrics.headPose?.roll ?? null,
+      alertLevel: metrics.alert?.level,
+      alertReason: metrics.alert?.reason,
+      mobileViTScore: mobileViT?.drowsyProbability ?? null,
+      mobileViTNonDrowsy: mobileViT?.nonDrowsyProbability ?? null,
+      mobileViTLabel: mobileViT?.label ?? null,
+      mobileViTLatencyMs: mobileViT?.inferenceTimeMs ?? null,
     })
   }
 

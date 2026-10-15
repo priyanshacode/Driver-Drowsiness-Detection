@@ -65,16 +65,29 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement | null>) {
 
     start()
 
-    const videoEl = videoRef.current
+    const videoNode = videoRef.current
 
     return () => {
       cancelled = true
-      streamRef.current?.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
-      if (videoEl) videoEl.srcObject = null
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop())
+        streamRef.current = null
+      }
+      if (videoNode) {
+        videoNode.srcObject = null
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [videoRef])
+
+  // Continually ensure active stream is attached to video element when mounted or remounted
+  useEffect(() => {
+    const video = videoRef.current
+    const stream = streamRef.current
+    if (video && stream && video.srcObject !== stream) {
+      video.srcObject = stream
+      video.play().catch(() => {})
+    }
+  })
 
   return state
 }

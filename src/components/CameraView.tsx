@@ -55,9 +55,10 @@ export function CameraView({
     >
       <video
         ref={videoRef}
-        className="h-full w-full object-cover"
+        autoPlay
         playsInline
         muted
+        className="h-full w-full object-cover"
         style={{ transform: 'scaleX(-1)' }}
       />
       <canvas
